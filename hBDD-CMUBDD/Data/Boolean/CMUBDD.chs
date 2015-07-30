@@ -31,7 +31,7 @@ module Data.Boolean.CMUBDD
 
 #include "bdduser.h"
 
-import Control.DeepSeq  ( NFData )
+import Control.DeepSeq  ( NFData, rnf )
 import Control.Monad	( liftM, zipWithM_ )
 
 import Data.IORef	( IORef, newIORef, readIORef, writeIORef )
@@ -42,9 +42,11 @@ import Foreign
 import Foreign.C
 
 import GHC.ForeignPtr	( newConcForeignPtr )
+import Foreign.ForeignPtr.Unsafe ( unsafeForeignPtrToPtr )
 
 import System.Mem	( performGC )
 import System.IO	( Handle, hIsReadable, hIsWritable )
+import System.IO.Unsafe ( unsafePerformIO )
 import System.Posix.IO	( handleToFd )
 
 import Data.Boolean
@@ -86,10 +88,8 @@ cToNum  = fromIntegral . toInteger
 -- | The abstract type of BDDs.
 {#pointer bdd as BDD foreign newtype#}
 
-withBDD :: BDD -> (Ptr BDD -> IO a) -> IO a
-
 -- BDDs are just pointers, so there's no work to do when we @deepseq@ them.
-instance Control.DeepSeq.NFData BDD
+instance Control.DeepSeq.NFData BDD where rnf x = seq x ()
 
 -- Belt-and-suspenders equality checking and ordering.
 instance Eq BDD where
